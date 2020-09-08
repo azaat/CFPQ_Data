@@ -1,2 +1,4 @@
+pyformlang
 numpy
 rdflib
+tqdm

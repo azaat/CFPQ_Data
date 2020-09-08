@@ -1,3 +1,4 @@
+from src.tools.base import Tool
 import lzma
 import tarfile
 import os
@@ -5,7 +6,6 @@ import subprocess
 import shutil
 import urllib.request
 import requests
-import argparse
 import numpy as np
 from rdflib import Graph, URIRef, BNode
 from tools.rdf_helper import write_to_rdf, add_rdf_edge
@@ -36,7 +36,7 @@ FULL_GRAPH_TO_GEN = [
 NUMBER_OF_WORST_CASES = 12
 
 RDF = 'RDF'
-DATA_ROOT_DIR = './data/'
+DATA_ROOT_DIR = 'data/'
 MATRICES_DIR = 'Matrices'
 MEMORY_ALIASES = 'MemoryAliases'
 
@@ -124,27 +124,27 @@ def to_file(filepath, graph):
             s = t[0]
             p = t[1]
             o = t[2]
-            out_file.write('%s %s %s\n'%(s,p,o))
+            out_file.write('%s %s %s\n' % (s, p, o))
+
 
 def unpack_graphs(graph_key):
-    to = os.path.join(DATA_ROOT_DIR, graph_key)    
+    to = os.path.join(DATA_ROOT_DIR, graph_key)
     arch = os.path.join(to, '%s.tar.xz' % MATRICES_DIR)
     print('Unpack ', arch, ' to ', to)
     unpack(arch, to)
 
 
 def gen_sparse_graph(target_dir, vertices, prob):
-
     subprocess.run([
-            GT_GRAPH,
-            '-t',
-            '0',
-            '-n',
-            '%s' % (vertices),
-            '-p',
-            '%s' % (prob),
-            '-o',
-            TMP_FILE,
+        GT_GRAPH,
+        '-t',
+        '0',
+        '-n',
+        '%s' % (vertices),
+        '-p',
+        '%s' % (prob),
+        '-o',
+        TMP_FILE,
     ])
 
     with open(TMP_FILE) as in_file:
@@ -293,47 +293,46 @@ def gen_sierpinski_graph(target_dir, degree, predicates=['A']):
     graph = []
     sierpinski(1, 2, 3, degree, predicates, graph)
     with open(
-        os.path.join(target_dir, 'sierpinskigraph_%s.txt' % (degree)), 'w'
+            os.path.join(target_dir, 'sierpinskigraph_%s.txt' % (degree)), 'w'
     ) as out_file:
         for triple in graph:
             out_file.write('%s %s %s \n' % (triple[0], triple[1], triple[2]))
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument(
-        '--update',
-        choices=[
-            'rdf', 'scalefree', 'full', 'worstcase', 'sparse', 'memoryaliases'
-        ],
-        required=False,
-        type=str,
-        help='partial dataset update',
-    )
-    args = parser.parse_args()
+class InitTool(Tool):
+    def init_parser(self, parser):
+        parser.add_argument(
+            '--update',
+            choices=[
+                'rdf', 'scalefree', 'full', 'worstcase', 'sparse', 'memoryaliases'
+            ],
+            required=False,
+            type=str,
+            help='partial dataset update',
+        )
 
-    prt = args.update
-
-    if prt == 'rdf':
-        download_data(RDF)
-        unpack_graphs(RDF)
-    elif prt == 'memoryaliases':
-        download_data(MEMORY_ALIASES)
-        unpack_graphs(MEMORY_ALIASES)
-    elif prt == 'scalefree':
-        generate_scale_free_graphs()
-    elif prt == 'full':
-        generate_full_graphs()
-    elif prt == 'worstcase':
-        generate_worst_case_graphs()
-    elif prt == 'sparse':
-        generate_all_sparse_graphs()
-    else:
-        install_gtgraph()
-        for graph_key in DATA_TO_UNPACK:
-            download_data(graph_key)
-            unpack_graphs(graph_key)
-        generate_all_sparse_graphs()
-        generate_full_graphs()
-        generate_worst_case_graphs()
-        generate_scale_free_graphs()
+    def eval(self, args):
+        prt = args.update
+        if prt == 'rdf':
+            download_data(RDF)
+            unpack_graphs(RDF)
+        elif prt == 'memoryaliases':
+            download_data(MEMORY_ALIASES)
+            unpack_graphs(MEMORY_ALIASES)
+        elif prt == 'scalefree':
+            generate_scale_free_graphs()
+        elif prt == 'full':
+            generate_full_graphs()
+        elif prt == 'worstcase':
+            generate_worst_case_graphs()
+        elif prt == 'sparse':
+            generate_all_sparse_graphs()
+        else:
+            install_gtgraph()
+            for graph_key in DATA_TO_UNPACK:
+                download_data(graph_key)
+                unpack_graphs(graph_key)
+            generate_all_sparse_graphs()
+            generate_full_graphs()
+            generate_worst_case_graphs()
+            generate_scale_free_graphs()
